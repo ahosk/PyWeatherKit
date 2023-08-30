@@ -16,7 +16,7 @@
 import jwt
 from time import time
 from dataclasses import dataclass
-
+from cryptography.hazmat.primitives import serialization
 
 # A token data class that has the token itself as well as the expiry time (in seconds since epoch).
 @dataclass
@@ -33,8 +33,11 @@ class Token:
 # *expiry* is the number of seconds the token should be valid for.
 # Returns a *Token*.
 def generate_token(team_id: str, service_id: str, key_id: str, key_path: str, expiry: int) -> Token:
-    with open(key_path, 'r') as key_file:
-        key = key_file.read()
+    if key_path.endswith('.p8'):
+        with open(key_path, 'r') as key_file:
+            key = key_file.read()
+    else:
+        key = string_to_pem(secret_key,pem_type='PRIVATE KEY')
     current_time = int(time())
     expiry_time = current_time + expiry
     payload = {
@@ -50,3 +53,12 @@ def generate_token(team_id: str, service_id: str, key_id: str, key_path: str, ex
     token = jwt.encode(payload, key, algorithm='ES256', headers=headers)
     return Token(token, expiry_time)
 
+def string_to_pem(string_data, pem_type):
+    pem_bytes = string_data.encode('utf-8')  # Convert the string to bytes
+    pem_formatted = serialization.Encoding.PEM
+    if pem_type == 'PRIVATE KEY':
+        pem_formatted = serialization.PrivateFormat.PKCS8
+    elif pem_type == 'PUBLIC KEY':
+        pem_formatted = serialization.PublicFormat.SubjectPublicKeyInfo
+    pem = serialization.to_pem(pem_bytes, encoding=pem_formatted)
+    return pem.decode('utf-8')  # Convert the PEM bytes back to a string
