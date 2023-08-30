@@ -37,7 +37,7 @@ def generate_token(team_id: str, service_id: str, key_id: str, key_path: str, ex
         with open(key_path, 'r') as key_file:
             key = key_file.read()
     else:
-        key = string_to_pem(secret_key,pem_type='PRIVATE KEY')
+        key = string_to_pem(secret_key)
     current_time = int(time())
     expiry_time = current_time + expiry
     payload = {
@@ -53,12 +53,8 @@ def generate_token(team_id: str, service_id: str, key_id: str, key_path: str, ex
     token = jwt.encode(payload, key, algorithm='ES256', headers=headers)
     return Token(token, expiry_time)
 
-def string_to_pem(string_data, pem_type):
+def string_to_pem(string_data):
     pem_bytes = string_data.encode('utf-8')  # Convert the string to bytes
     pem_formatted = serialization.Encoding.PEM
-    if pem_type == 'PRIVATE KEY':
-        pem_formatted = serialization.PrivateFormat.PKCS8
-    elif pem_type == 'PUBLIC KEY':
-        pem_formatted = serialization.PublicFormat.SubjectPublicKeyInfo
-    pem = serialization.to_pem(pem_bytes, encoding=pem_formatted)
+    pem = serialization.to_pem(pem_bytes, encoding=serilization.PrivateFormat.PKCS8)
     return pem.decode('utf-8')  # Convert the PEM bytes back to a string
